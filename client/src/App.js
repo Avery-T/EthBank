@@ -1,75 +1,93 @@
 import React, { Component } from "react";
 import BankContract from "./contracts/bank.json";
 import getWeb3 from "./getWeb3";
-import DepositBtn from "./components/DepositBtn"; 
 import "./App.css";
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null };
-
+ constructor(props){
+  super(props); 
+  this.handleChange = this.handleChange.bind(this); 
+  this.handleDeposit = this.handleDeposit.bind(this);
+  this.handleWithdraw = this.handleWithdraw.bind(this); 
+ } 
+  
+  state = { formInput: null , web3: null, accounts: null, contract: null, value:'' };
+ 
   componentDidMount = async () => {
     try {
       // Get network provider and web3 instance.
-      const web3 = await getWeb3();
+      const web3 = await getWeb3()
 
       // Use web3 to get the user's accounts.
-      const accounts = await web3.eth.getAccounts();
+      const accounts = await web3.eth.getAccounts()
 
       // Get the contract instance.
-      const networkId = await web3.eth.net.getId();
-      const deployedNetwork = BankContract.networks[networkId];
+      const networkId = await web3.eth.net.getId()
+      const deployedNetwork = BankContract.networks[networkId]
       const instance = new web3.eth.Contract(
        BankContract.abi,
         deployedNetwork && deployedNetwork.address,
-      );
+      )
 
-      // Set web3, accounts, and contract to the state, and then proceed with an
-      // example of interacting with the contract's methods.
       this.setState({ web3, accounts, contract: instance });
+      
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
         `Failed to load web3, accounts, or contract. Check console for details.`,
-      );
-      console.error(error);
+      )
+      console.error(error)
     }
-  };
+  }
 
-//  runExample = async () => {
-  //  const { accounts, contract } = this.state;
+textValidation(userText){
+  if(/^[1-9]/.test(userText)) { return true} 
+  alert('please enter a valid eth amount') 
+  return false 
+} 
+  
+ handleChange(event) {
+  this.setState({ value:event.target.value })
+ } 
 
-    // Stores a given value, 5 by default.
-   // await contract.methods.set(5).send({ from: accounts[0] });
+ handleDeposit(event){ 
+  if(!this.textValidation(this.state.value)) { return} 
+  event.preventDefault(); 
+  try{ (async () => { 
+    const { web3, accounts, contract } = this.state
+    await contract.methods.deposit().send({ from: accounts[0], value: web3.utils.toWei(this.state.value, "ether") })})()
+     }catch(error){console.log(error)} 
+ } 
 
-    // Get the value from the contract to prove it worked.
-   // const response = await contract.methods.get().call();
-
-    // Update state with the result.
-   // this.setState({ storageValue: response });
- // };
-//async deposite(amount){ 
- //  const { accounts, contract } = this.state;
-    
- //  await this.state.instance.methods.deposit().send({value: amount.toString(), from this.state.account})
-// }  
+ handleWithdraw(event){ 
+ try{ 
+   (async () => { 
+    const { web3, accounts, contract } = this.state
+    await contract.methods.withdraw().send({ from: accounts[0] })})()
+    }catch(error){ console.log(error) }
+ }
 
   render() {
     if (!this.state.web3) {
-      return <div>Loading Web3, accounts, and contract...</div>;
+      return <div>Loading Web3, accounts, and contract...</div>
     }
     return (
       <div className="App">
-        <h1>Good to Go!</h1>
-        <p>Your Truffle Box is installed and ready.</p>
-        <h2>Smart Contract Example</h2>
-        <p>
-          If your contracts compiled and migrated successfully, below will show
-          a stored value of 5 (by default).
-        </p>
-        <p>
-          Try changing the value stored on <strong>line 40</strong> of App.js.
-        </p>
-       <DepositBtn props={this.state}/>  
+        <h1>Ethereum Bank</h1>
+        <div> 
+          <form onSubmit={this.handleDeposit}>
+            <label> 
+             Deposit ->    
+              <input type="text" value={this.state.value} onChange={this.handleChange}/>
+            </label> 
+            <input type='submit' value='Submit'/> 
+          </form>
+        </div>
+        <div style={{ marginTop: 25}} > 
+        <button onClick={this.handleWithdraw}>
+         <p> withdraw all! </p> 
+        </button>
+        </div> 
       </div>
     );
   }
