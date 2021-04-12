@@ -12,7 +12,10 @@ contract bank {
   }
 
   function withdraw()public{ 
-    require(isDeposited[msg.sender] == true, 'error not deposited'); 
+    require(isDeposited[msg.sender] == true); 
     msg.sender.transfer(etherBalance[msg.sender]); 
+    etherBalance[msg.sender] = 0; 
+    isDeposited[msg.sender] = false; 
+
    }  
  } 
